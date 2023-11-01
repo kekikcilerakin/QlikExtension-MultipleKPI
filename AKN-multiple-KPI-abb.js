@@ -7,8 +7,75 @@ define([
 	'//cdn.jsdelivr.net/npm/numbro@2.2.0/dist/languages.min.js'
 
 ], function ($, qlik, props, initProps, numbro) {
-	$('<link rel="stylesheet" type="text/css" href="AKN-multiple-KPI-abb.css">');
 	'use strict';
+
+	function initLanguage() {
+		console.log("INIT LANGUAGE");
+		numbro.registerLanguage({
+			languageTag: "az",
+			delimiters: {
+				thousands: ",",
+				decimal: "."
+			},
+			abbreviations: {
+				thousand: "K",
+				million: "M",
+				billion: "G",
+				trillion: "T"
+			},
+			ordinal: number => {
+				let b = number % 10;
+				return (~~(number % 100 / 10) === 1) ? "th" : (b === 1) ? "st" : (b === 2) ? "nd" : (b === 3) ? "rd" : "th";
+			},
+			currency: {
+				symbol: "₼",
+				position: "postfix",
+				code: "AZN"
+			},
+			currencyFormat: {
+				thousandSeparated: true,
+				totalLength: 4,
+				spaceSeparated: false,
+				spaceSeparatedCurrency: false,
+				average: true
+			},
+			formats: {
+				fourDigits: {
+					totalLength: 4,
+					spaceSeparated: false,
+					average: true
+				},
+				fullWithTwoDecimals: {
+					output: "currency",
+					thousandSeparated: true,
+					spaceSeparated: false,
+					mantissa: 2
+				},
+				fullWithTwoDecimalsNoCurrency: {
+					mantissa: 2,
+					thousandSeparated: true
+				},
+				fullWithNoDecimals: {
+					output: "currency",
+					thousandSeparated: true,
+					spaceSeparated: false,
+					mantissa: 0
+				}
+			}
+		});
+
+		numbro.setLanguage('az');
+	}
+
+	function formatMeasureValue(measure, value) {
+		if (measure.qIsAutoFormat) {
+			return numbro(value).format('0.0a');
+		}
+		else {
+			return numbro(value).format(measure.qNumFormat.qFmt);
+		}
+	}
+	
 	return {
 		definition: props,
 		initialProperties: initProps,
@@ -18,75 +85,7 @@ define([
 
 			let isTopMeasureNumber = false;
 
-			function registerLanguage()
-{
-
-			}
-			//#region numbro value formatting
-			numbro.registerLanguage({
-				languageTag: "az",
-				delimiters: {
-					thousands: ",",
-					decimal: "."
-				},
-				abbreviations: {
-					thousand: "K",
-					million: "M",
-					billion: "G",
-					trillion: "T"
-				},
-				ordinal: number => {
-					let b = number % 10;
-					return (~~(number % 100 / 10) === 1) ? "th" : (b === 1) ? "st" : (b === 2) ? "nd" : (b === 3) ? "rd" : "th";
-				},
-				currency: {
-					symbol: "₼",
-					position: "postfix",
-					code: "AZN"
-				},
-				currencyFormat: {
-					thousandSeparated: true,
-					totalLength: 4,
-					spaceSeparated: false,
-					spaceSeparatedCurrency: false,
-					average: true
-				},
-				formats: {
-					fourDigits: {
-						totalLength: 4,
-						spaceSeparated: false,
-						average: true
-					},
-					fullWithTwoDecimals: {
-						output: "currency",
-						thousandSeparated: true,
-						spaceSeparated: false,
-						mantissa: 2
-					},
-					fullWithTwoDecimalsNoCurrency: {
-						mantissa: 2,
-						thousandSeparated: true
-					},
-					fullWithNoDecimals: {
-						output: "currency",
-						thousandSeparated: true,
-						spaceSeparated: false,
-						mantissa: 0
-					}
-				}
-			});
-
-			numbro.setLanguage('az');
-
-			function formatMeasureValue(measure, value) {
-				if (measure.qIsAutoFormat) {
-					return numbro(value).format('0.0a');
-				}
-				else {
-					return numbro(value).format(measure.qNumFormat.qFmt);
-				}
-			}
-			//#endregion
+			initLanguage();
 
 			//#region qMatrix
 			function getqMatrix() {
@@ -99,20 +98,18 @@ define([
 			const measures = layout.qHyperCube.qMeasureInfo;
 			let topMeasureValue;
 			let bottomMeasureValue;
-			if (getqMatrix()[0][0].qNum !== 'NaN')
-			{
+			if (getqMatrix()[0][0].qNum !== 'NaN') {
 				isTopMeasureNumber = true;
-				
+
 				const topMeasure = measures[0];
 				topMeasureValue = formatMeasureValue(topMeasure, topMeasure.qMax);
-				
+
 				if (measures.length === 2) {
 					const bottomMeasure = measures[1];
 					bottomMeasureValue = formatMeasureValue(bottomMeasure, bottomMeasure.qMax);
 				}
 			}
-			else
-			{
+			else {
 				topMeasureValue = getqMatrix()[0][0].qText;
 
 				if (measures.length === 2) {
@@ -131,8 +128,7 @@ define([
 			let iconClass;
 			let iconColor;
 
-			if (isTopMeasureNumber)
-			{
+			if (isTopMeasureNumber) {
 				const floatValue = parseFloat(topMeasureValue);
 				if (floatValue > 0) {
 					iconClass = positiveIconClass;
@@ -147,24 +143,24 @@ define([
 					iconColor = "";
 				}
 			}
-			
+
 			//#endregion
-			
+
 			//#region canvas
 			const canvasID = layout.qInfo.qId;
 			const width = $element.width();
 			const height = $element.height();
-			
+
 			let html;
 			html += `<head><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"></head>`
-			
+
 			if (measures.length === 2) {
 				html += `<div id="${canvasID}" style="width: ${width}px; height: ${height}px; background: #42A0F2; border-radius: 10px; text-align: center; position: absolute; top: 0; display: flex; flex-direction: column; justify-content: space-around; align-items: center;">`;
-				
+
 				if (layout.toggleIcon) {
 					html += `<i class="${iconClass}" style="font-size: 2rem; color: ${iconColor};"></i>`;
 				}
-				
+
 				html += `<div class="header" style="color: #C5E1FA; font-size: 15px;">${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle}</div>`;
 				html += `<div class="measure" style="color: #FFFFFF; font-size: 30px;">${topMeasureValue}</div>`;
 				html += `<hr class="dotted-line" style="border: none; border-top: 2px dotted #C5E1FA; width: 70%; margin: 0">`;
@@ -172,29 +168,28 @@ define([
 			}
 			else {
 				html += `<div id="${canvasID}" style="width: ${width}px; height: ${height}px; background: #42A0F2; border-radius: 10px; text-align: center; position: absolute; top: 0; display: flex; flex-direction: column; justify-content: center; align-items: center;">`;
-				
+
 				if (layout.toggleIcon) {
 					html += `<i class="${iconClass}" style="font-size: 2rem; color: ${iconColor};"></i>`;
 				}
-				
+
 				html += `<div class="header" style="color: #C5E1FA; font-size: 15px; margin-top: 10px;">${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle}</div>`;
 				html += `<div class="measure" style="color: #FFFFFF; font-size: 30px;">${topMeasureValue}</div>`;
 			}
-			
+
 			html += `</div>`;
-			
+
 			$element.html(html);
 			//#endregion
-			
+
 			//#region Hover Popup
-			if (layout.popupText)
-			{
+			if (layout.popupText) {
 				const measureElement = document.querySelector(`#${canvasID} .measure`);
-				
+
 				const popup = document.createElement('div');
 				popup.className = 'popup';
 				popup.textContent = layout.popupText;
-				
+
 				document.body.appendChild(popup);
 
 				measureElement.addEventListener('mouseover', (event) => {
@@ -217,7 +212,7 @@ define([
 					popup.style.zIndex = '999';
 					popup.style.maxWidth = '512px';
 				});
-					
+
 				measureElement.addEventListener('mouseout', () => {
 					popup.style.display = 'none';
 				});
