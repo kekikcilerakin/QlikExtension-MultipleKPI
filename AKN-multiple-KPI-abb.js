@@ -10,7 +10,6 @@ define([
 	'use strict';
 
 	function initLanguage() {
-		console.log("INIT LANGUAGE");
 		numbro.registerLanguage({
 			languageTag: "az",
 			delimiters: {
@@ -75,32 +74,25 @@ define([
 			return numbro(value).format(measure.qNumFormat.qFmt);
 		}
 	}
-	
+
 	return {
 		definition: props,
 		initialProperties: initProps,
 
 		paint: async function ($element, layout) {
-			var app = qlik.currApp();
+			const app = qlik.currApp();
+			const qMatrix = layout.qHyperCube.qDataPages[0].qMatrix;
 
-			let isTopMeasureNumber = false;
+			console.log("AKN-Multiple-KPI-v1.2");
 
 			initLanguage();
-
-			//#region qMatrix
-			function getqMatrix() {
-				return layout.qHyperCube.qDataPages[0].qMatrix;
-			}
-			//console.log("getMatrix", getqMatrix())
-			//#endregion
-
+			
 			//#region measures
 			const measures = layout.qHyperCube.qMeasureInfo;
 			let topMeasureValue;
 			let bottomMeasureValue;
-			if (getqMatrix()[0][0].qNum !== 'NaN') {
-				isTopMeasureNumber = true;
 
+			if (qMatrix[0][0].qNum !== 'NaN') {
 				const topMeasure = measures[0];
 				topMeasureValue = formatMeasureValue(topMeasure, topMeasure.qMax);
 
@@ -110,7 +102,7 @@ define([
 				}
 			}
 			else {
-				topMeasureValue = getqMatrix()[0][0].qText;
+				topMeasureValue = qMatrix[0][0].qText;
 
 				if (measures.length === 2) {
 					const bottomMeasure = measures[1];
@@ -118,32 +110,24 @@ define([
 				}
 			}
 			//#endregion
-
+			
 			//#region icon
-			let positiveIconClass = "bi-arrow-up-circle-fill";
-			let positiveIconColor = "#45d286";
-			let negativeIconClass = "bi-arrow-down-circle-fill";
-			let negativeIconColor = "#e57e7e";
+			let iconClass = '';
+			let iconColor = '';
 
-			let iconClass;
-			let iconColor;
+			let isTopMeasureNumber = !isNaN(parseFloat(qMatrix[0][0].qNum));
 
 			if (isTopMeasureNumber) {
 				const floatValue = parseFloat(topMeasureValue);
 				if (floatValue > 0) {
-					iconClass = positiveIconClass;
-					iconColor = positiveIconColor;
+					iconClass = 'bi-arrow-up-circle-fill';
+					iconColor = '#45d286';
 				}
 				else if (floatValue < 0) {
-					iconClass = negativeIconClass;
-					iconColor = negativeIconColor;
-				}
-				else {
-					iconClass = "";
-					iconColor = "";
+					iconClass = 'bi-arrow-down-circle-fill';
+					iconColor = '#e57e7e';
 				}
 			}
-
 			//#endregion
 
 			//#region canvas
@@ -151,8 +135,7 @@ define([
 			const width = $element.width();
 			const height = $element.height();
 
-			let html;
-			html += `<head><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"></head>`
+			let html = `<head><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"></head>`;
 
 			if (measures.length === 2) {
 				html += `<div id="${canvasID}" style="width: ${width}px; height: ${height}px; background: #42A0F2; border-radius: 10px; text-align: center; position: absolute; top: 0; display: flex; flex-direction: column; justify-content: space-around; align-items: center;">`;
@@ -218,6 +201,7 @@ define([
 				});
 			}
 			//#endregion
+
 		}
 	};
 });
